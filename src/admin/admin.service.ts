@@ -10,7 +10,7 @@ export class AdminService {
   constructor(@InjectModel(Admin) private adminModel: typeof Admin) {}
 
 
-  // create admin 
+  //create admin 
   async createAdmin(dto: CreateAdminDto) {
     const hashed = await bcrypt.hash(dto.password, 10);
     return this.adminModel.create({ ...dto, password: hashed });

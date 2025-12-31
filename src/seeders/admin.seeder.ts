@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt';
 
 export async function seedAdmin() {
   const existing = await Admin.findOne({
-    where: { email: 'admin@carrental.com' },
+    where: { email: 'admin@grocery.com' },
   });
 
   if (!existing) {

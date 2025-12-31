@@ -28,8 +28,9 @@ export class AuthService {
     const token = this.jwtService.sign({
       id: admin.id,
       email: admin.email,
-      role: 'ADMIN',
-      type: 'ADMIN',
+     role: admin.role
+,
+    
     });
 
     const { password: _, ...safeAdmin } = admin.toJSON();
