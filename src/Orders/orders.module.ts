@@ -21,5 +21,12 @@ import { AuthModule } from 'src/auth/auth.module';
 
   controllers: [OrdersController],
   providers: [OrdersService],
+
+
+   exports: [OrdersService],
+
+
+
+
 })
 export class OrdersModule {}

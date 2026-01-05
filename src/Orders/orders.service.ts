@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Order } from './order.model';
 import { OrderItem } from './order-item.model';
 import { Cart } from '../Cart Module/cart.model';
-import { CartItem } from '../Cart Module/cart.model'; // Correct import
+import { CartItem } from '../Cart Module/cart.model';
 import { OrderStatus } from './order-status.enum';
 
 @Injectable()
@@ -15,27 +15,24 @@ export class OrdersService {
     @InjectModel(CartItem) private cartItemModel: typeof CartItem,
   ) {}
 
+  // ✅ STEP 1: Checkout → Create Order (PENDING)
   async checkout(userId: number) {
-    // Fetch Cart with Items
     const cart = await this.cartModel.findOne({
       where: { userId },
       include: [CartItem],
     });
 
-    //  Validate Cart
     if (!cart || !cart.items || cart.items.length === 0) {
       throw new BadRequestException('Cart is empty');
     }
 
-    //  Create Order
     const order = await this.orderModel.create({
       userId,
       totalPrice: cart.totalPrice,
       status: OrderStatus.PENDING,
     });
 
-    //  Create Order Items
-    for (const item of cart.items ?? []) {
+    for (const item of cart.items) {
       await this.orderItemModel.create({
         orderId: order.id,
         productId: item.productId,
@@ -46,16 +43,50 @@ export class OrdersService {
       });
     }
 
-    //  Clear Cart
-    await this.cartItemModel.destroy({ where: { cartId: cart.id } });
-    cart.totalPrice = 0;
-    await cart.save();
-
-    //  Return Response
     return {
-      message: 'Order placed successfully',
+      message: 'Order created. Proceed to payment.',
+      orderId: order.id,
+      amount: cart.totalPrice,
+      status: order.status,
+    };
+  }
+
+  // ✅ STEP 2: Payment Success → Confirm Order
+  async confirmPaymentSuccess(orderId: number, userId: number) {
+    const order = await this.orderModel.findByPk(orderId);
+
+    if (!order) {
+      throw new BadRequestException('Order not found');
+    }
+
+    if (order.status !== OrderStatus.PENDING) {
+      throw new BadRequestException('Order already processed');
+    }
+
+    // Update order status
+    order.status = OrderStatus.PAID;
+    await order.save();
+
+    // Clear cart AFTER payment success
+    const cart = await this.cartModel.findOne({ where: { userId } });
+    if (cart) {
+      await this.cartItemModel.destroy({ where: { cartId: cart.id } });
+      cart.totalPrice = 0;
+      await cart.save();
+    }
+
+    return {
+      message: 'Payment confirmed, order placed successfully',
       orderId: order.id,
       status: order.status,
     };
+  }
+
+  // ❌ Optional: Payment Failed
+  async cancelOrder(orderId: number) {
+    await this.orderModel.update(
+      { status: OrderStatus.CANCELLED },
+      { where: { id: orderId } },
+    );
   }
 }
