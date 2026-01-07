@@ -13,27 +13,43 @@ export class AuthService {
   ) {}
 
   async adminLogin(data: { email: string; password: string }) {
-    const { email, password } = data;
+  const { email, password } = data;
 
-    if (!email || !password) {
-      throw new UnauthorizedException('Email & password required');
-    }
-
-    const admin = await this.adminModel.findOne({ where: { email } });
-    if (!admin) throw new UnauthorizedException('Admin not found');
-
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) throw new UnauthorizedException('Password incorrect');
-
-    const token = this.jwtService.sign({
-      id: admin.id,
-      email: admin.email,
-     role: admin.role
-,
-    
-    });
-
-    const { password: _, ...safeAdmin } = admin.toJSON();
-    return { message: 'Admin login successful', token, admin: safeAdmin };
+  if (!email || !password) {
+    throw new UnauthorizedException('Email & password required');
   }
+
+  const admin = await this.adminModel.findOne({ where: { email } });
+  if (!admin) throw new UnauthorizedException('Admin not found');
+
+  const isMatch = await bcrypt.compare(password, admin.password);
+  if (!isMatch) throw new UnauthorizedException('Password incorrect');
+
+  //  JWT payload
+  const token = this.jwtService.sign({
+    id: admin.id,
+    email: admin.email,
+    role: admin.role,
+  });
+
+  //  remove password
+  const { password: _, ...safeAdmin } = admin.toJSON();
+
+  return {
+    success: true,
+    message: 'Login successful',
+    token,
+    user: {
+      id: safeAdmin.id,
+      name: safeAdmin.name,
+      email: safeAdmin.email,
+      phone: safeAdmin.phone ?? null,
+      status: safeAdmin.status ?? true,
+      permissions: [
+        { action: 'manage', subject: 'all' },
+      ],
+    },
+  };
+}
+
 }

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Order } from './order.model';
 import { OrderItem } from './order-item.model';
@@ -15,7 +15,17 @@ export class OrdersService {
     @InjectModel(CartItem) private cartItemModel: typeof CartItem,
   ) {}
 
-  // ✅ STEP 1: Checkout → Create Order (PENDING)
+
+  //  Find order by ID (used by PaymentsService)
+async findById(orderId: number) {
+  return this.orderModel.findByPk(orderId);
+}
+
+
+
+
+
+  //  STEP 1: Checkout → Create Order (PENDING)
   async checkout(userId: number) {
     const cart = await this.cartModel.findOne({
       where: { userId },
@@ -51,7 +61,7 @@ export class OrdersService {
     };
   }
 
-  // ✅ STEP 2: Payment Success → Confirm Order
+  //  STEP 2: Payment Success → Confirm Order
   async confirmPaymentSuccess(orderId: number, userId: number) {
     const order = await this.orderModel.findByPk(orderId);
 
@@ -82,11 +92,90 @@ export class OrdersService {
     };
   }
 
-  // ❌ Optional: Payment Failed
+  //  Optional: Payment Failed
   async cancelOrder(orderId: number) {
     await this.orderModel.update(
       { status: OrderStatus.CANCELLED },
       { where: { id: orderId } },
     );
   }
+
+
+
+   
+  //  all orders  (Pagination + Filter optional)
+  async getAllOrders(page = 1, limit = 10, userId?: number) {
+    const offset = (page - 1) * limit;
+    const where: any = {};
+
+    if (userId) {
+      where.userId = userId; //  user     orders
+    }
+
+    const { rows, count } = await this.orderModel.findAndCountAll({
+      where,
+      include: [OrderItem],  
+      order: [['createdAt', 'DESC']], // newest first
+      limit,
+      offset,
+    });
+
+    return {
+      orders: rows,
+      totalOrders: count,
+      page,
+      totalPages: Math.ceil(count / limit),
+    };
+  }
+
+  // =========================
+  //  Order by ID (Detail view)
+  async getOrderById(orderId: number) {
+    const order = await this.orderModel.findByPk(orderId, {
+      include: [OrderItem],
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return order;
+  }
+
+
+
+
+  
+
+async getAllOrdersForAdmin(page = 1, limit = 10, status?: string) {
+  const offset = (page - 1) * limit;
+
+  const where: any = {};
+  if (status) {
+    where.status = status; // Optional: filter by status
+  }
+
+  const { rows, count } = await this.orderModel.findAndCountAll({
+    where,
+    include: [OrderItem], // relation with items
+    order: [['createdAt', 'DESC']], // newest first
+    limit,
+    offset,
+  });
+
+  return {
+    orders: rows,
+    totalOrders: count,
+    page,
+    totalPages: Math.ceil(count / limit),
+  };
+}
+
+
+
+
+
+
+
+
 }

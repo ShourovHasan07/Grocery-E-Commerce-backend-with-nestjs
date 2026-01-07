@@ -53,11 +53,11 @@ export class Order extends Model<OrderAttributes, OrderCreationAttributes> {
   })
   declare status: OrderStatus;
 
-  // ✅ Relation with OrderItem
+  //  Relation with OrderItem
   @HasMany(() => OrderItem)
   declare items?: OrderItem[];
 
-  // ✅ Timestamps (optional but industry standard)
+  //  Timestamps (optional but industry standard)
   @CreatedAt
   declare createdAt: Date;
 

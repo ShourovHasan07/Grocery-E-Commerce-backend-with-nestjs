@@ -8,8 +8,8 @@ export class PaymentsController {
 
   //  Initiate Payment → returns SSLCommerz redirect URL
   @Post('init')
-  async init(@Body() body: { orderId: number; amount: number }) {
-    return this.paymentsService.initiatePayment(body.orderId, body.amount);
+  async init(@Body() body: { orderId: number;  }) {
+    return this.paymentsService.initiatePayment(body.orderId);
   }
 
   //  Payment Success Callback
