@@ -1,13 +1,25 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
 
 @Injectable()
 export class AdminGuard implements CanActivate {
-  canActivate(ctx: ExecutionContext) {
+  canActivate(ctx: ExecutionContext): boolean {
     const req = ctx.switchToHttp().getRequest();
-    console.log('REQ USER:', req.user);
 
-    // Only allow ADMIN or SUPER_ADMIN
+    if (!req.user) {
+      throw new UnauthorizedException('User not logged in');
+    }
+
+    if (!req.user.role) {
+      throw new UnauthorizedException('Role missing');
+    }
+
     const allowedRoles = ['ADMIN', 'SUPER_ADMIN'];
-    return allowedRoles.includes(req.user?.role);
+
+    if (!allowedRoles.includes(req.user.role)) {
+      throw new ForbiddenException('Admin access only');
+    }
+
+    return true;
   }
 }
+

@@ -1,6 +1,9 @@
 import { Controller, Get, Param, ParseIntPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { AdminGuard } from 'src/admin/admin.guard';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+
 
 @Controller('orders')
 export class OrdersController {
@@ -18,7 +21,7 @@ export class OrdersController {
 
 
   
-  // GET all orders 
+  // USER: GET ALL ORDERS
  
   @Get()
   getAllOrders(
@@ -30,6 +33,21 @@ export class OrdersController {
     const userId = req.user?.id; 
     return this.ordersService.getAllOrders(Number(page), Number(limit), userId);
   }
+
+  // ADMIN: GET ALL ORDERS
+  @UseGuards(JwtAuthGuard, AdminGuard)
+@Get('admin')
+getAllOrdersForAdmin(
+  @Query('page') page: string = '1',
+  @Query('limit') limit: string = '10',
+  @Query('status') status?: string,
+) {
+  return this.ordersService.getAllOrdersForAdmin(
+    Number(page),
+    Number(limit),
+    status,
+  );
+}
 
 
 

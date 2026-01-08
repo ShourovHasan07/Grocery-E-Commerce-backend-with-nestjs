@@ -16,6 +16,7 @@ export interface OrderAttributes {
   userId: number;
   totalPrice: number;
   status: OrderStatus;
+   createdAt?: Date;
 }
 
 // Interface for creation attributes
