@@ -6,6 +6,8 @@ import {
   UseInterceptors,
   BadRequestException,
   UseGuards,
+  Put,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './product.service';
@@ -44,4 +46,21 @@ export class ProductAdminController {
   }
 
 
+
+// UPDATE PRODUCT
+  @Put(':id')
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @UseInterceptors(FileInterceptor('image'))
+  async update(
+    @Param('id') id: string,
+    @Body() body: CreateProductDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (file) {
+      const imageUrl = await this.productsService.uploadImageToCloudinary(file);
+      body.image = imageUrl;
+    }
+
+    return this.productsService.updateProduct(+id, body);
+  }
 }

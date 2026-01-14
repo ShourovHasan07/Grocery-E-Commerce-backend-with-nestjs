@@ -1,37 +1,63 @@
-import { Controller, Post, Get, Patch, Delete, Body, Param, Req, UseGuards, } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('cart')
-@UseGuards(AuthGuard('jwt'))
+// @UseGuards(AuthGuard('jwt'))
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Post('add')
   addToCart(@Req() req, @Body() dto: AddToCartDto) {
-    const userId = req.user.id; // Extract user ID from JWT Token 
-    return this.cartService.addToCart(userId, dto);
+    const userId = req.user?.id;
+    const guestId = dto.guestId;
+    return this.cartService.addToCart(dto, userId, guestId);
   }
 
-  @Get()
-  getCart(@Req() req) {
-    return this.cartService.getCart(req.user.id);
+  @Get(':id')
+  async getCart(@Param('id') id: string, @Req() req) {
+    const userId = req.user?.id;
+    const guestId = id;
+    return await this.cartService.getCart(userId, guestId);
   }
 
   @Patch('update')
   updateCart(@Req() req, @Body() dto: UpdateCartDto) {
-    return this.cartService.updateQuantity(req.user.id, dto);
+    const userId = req.user?.id;
+    const guestId = dto.guestId
+    return this.cartService.updateQuantity(dto, userId, guestId, );
   }
 
-  @Delete('remove/:productId')
-  removeItem(@Req() req, @Param('productId') productId: number) {
-    return this.cartService.removeItem(req.user.id, productId);
+  @Delete('remove/:productId/:id')
+  removeItem(@Param('productId') productId: number, @Param('id') id: string, @Req() req) {
+    const userId = req.user?.id;
+    const guestId = id;
+    return this.cartService.removeItem(userId, guestId, productId);
   }
 
-  @Delete('clear')
-  clearCart(@Req() req) {
-    return this.cartService.clearCart(req.user.id);
+  @Delete('clear/:id')
+  clearCart(@Param('id') id: string, @Req() req) {
+    const userId = req.user?.id;
+    const guestId = id;
+    return this.cartService.clearCart(userId, guestId);
   }
+
+
+// murge gustID to userid  Api 
+
+  @UseGuards(AuthGuard) // only logged-in user
+  @Post("merge")
+  mergeCart(@Req() req, @Body("guestId") guestId: string) {
+    const userId = req.user.id;
+    return this.cartService.mergeGuestCart(userId, guestId);
+  }
+
+
+
+
+
+
+
 }

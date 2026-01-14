@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
 
-  // DEBUG: env loaded কিনা চেক
+  // DEBUG: env loaded 
   console.log('ENV CHECK:', {
     CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     API_KEY: process.env.CLOUDINARY_API_KEY ? 'FOUND' : 'MISSING',
@@ -26,9 +26,20 @@ async function bootstrap() {
     }),
   );
 
+
+
+
+
+
+  //  FIXED CORS CONFIG
   app.enableCors({
-    origin: 'http://localhost:3001',
+    origin: [
+      'http://localhost:3000', // frontend
+      'http://localhost:3001', // admin panel
+    ],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   await app.listen(process.env.PORT || 4000);

@@ -8,8 +8,11 @@ export class Cart extends Model<Cart> {
   declare id: number;
 
   @ForeignKey(() => User)
-  @Column({ type: DataType.INTEGER, allowNull: false })
-  declare userId: number;
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  declare userId: number | null;
+
+ @Column({ type: DataType.STRING, allowNull: true })
+declare guestId: string | null;
 
   @Column({ type: DataType.FLOAT, defaultValue: 0 })
   declare totalPrice: number;
