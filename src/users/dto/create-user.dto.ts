@@ -9,8 +9,13 @@ export class CreateUserDto {
   @IsString()
   name?: string;
 
+  @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string; // optional + email
+
+  @IsOptional()
+  @IsString()
+  phone?: string | null; // optional + nullable
 
   @IsOptional()
   @IsString()
@@ -20,3 +25,4 @@ export class CreateUserDto {
   @IsBoolean()
   status?: boolean;
 }
+

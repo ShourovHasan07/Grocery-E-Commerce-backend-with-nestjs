@@ -4,8 +4,8 @@ import { OrdersController } from './orders.controller';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Order } from './order.model';
 import { OrderItem } from './order-item.model';
-import { Cart } from '../Cart Module/cart.model';
-import { CartItem } from '../Cart Module/cart.model';
+import { Cart } from '../cart-module/cart.model';
+import { CartItem } from '../cart-module/cart.model';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({

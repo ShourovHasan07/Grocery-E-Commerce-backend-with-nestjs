@@ -7,7 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { ProductModule } from './products/product.module';
-import { CartModule } from './Cart Module/cart.module';
+import { CartModule } from './cart-module/cart.module';
 import { OrdersModule } from './Orders/orders.module';
 import { PaymentsModule } from './Payments/payments.module';
 import { DashboardModule } from './dashboard/dashboard.module';

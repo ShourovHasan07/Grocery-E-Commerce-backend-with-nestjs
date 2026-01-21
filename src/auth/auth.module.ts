@@ -10,6 +10,7 @@ import { Admin } from '../admin/admin.model';
 import { User } from '../users/user.model';
 import { AuthUserController } from './auth.user.controller';
 import { AuthUserService } from './auth.user.service';
+import { Otp } from 'src/users/otp.model';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { AuthUserService } from './auth.user.service';
       secret: process.env.JWT_SECRET || 'jwtSecretKey123',
       signOptions: { expiresIn: '7d' },
     }),
-    SequelizeModule.forFeature([Admin, User]),
+    SequelizeModule.forFeature([Admin, User,Otp]),
   ],
   controllers: [AuthController,AuthUserController],
   providers: [AuthService,  AuthUserService, JwtStrategy],

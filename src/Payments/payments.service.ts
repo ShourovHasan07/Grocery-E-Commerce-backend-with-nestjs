@@ -3,9 +3,10 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Payment } from './payments.model';
 import axios from 'axios';
+import qs from 'qs';
 import { v4 as uuid } from 'uuid';
 import { OrdersService } from '../Orders/orders.service';
-import { CartService } from '../Cart Module/cart.service';
+import { CartService } from '../cart-module/cart.service';
 import { PaymentStatus } from './payment-status.enum';
 import { Order } from 'src/Orders/order.model';
 import { OrderStatus } from 'src/Orders/order-status.enum';
@@ -16,111 +17,95 @@ export class PaymentsService {
     @InjectModel(Payment)
     private paymentModel: typeof Payment,
     private ordersService: OrdersService,
-    private cartService: CartService
+    private cartService: CartService,
   ) {}
 
-  
-
   //  Initiate Payment → create pending payment + SSLCommerz URL
-async initiatePayment(orderId: number) {
+  async initiatePayment(orderId: number): Promise<{ paymentUrl: string; transactionId: string }> {
+    // Fetch order
+    const order: Order | null = await this.ordersService.findById(orderId);
+    if (!order) throw new BadRequestException('Order not found');
+    if (order.status !== OrderStatus.PENDING) throw new BadRequestException('Order already paid or cancelled');
 
-  // 1️⃣ Fetch order
-  const order = await this.ordersService.findById(orderId);
+    const amount: number = order.totalPrice;
+    if (amount <= 0) throw new BadRequestException('Invalid order amount');
 
-  if (!order) {
-    throw new BadRequestException('Order not found');
-  }
+    // Prevent double payment
+    const alreadyPaid = await this.paymentModel.findOne({
+      where: { orderId, status: PaymentStatus.SUCCESS },
+    });
+    if (alreadyPaid) throw new BadRequestException('Order already paid');
 
-  if (order.status !== OrderStatus.PENDING) {
-    throw new BadRequestException('Order already paid or cancelled');
-  }
-
-  const amount = order.totalPrice;
-
-  if (amount <= 0) {
-    throw new BadRequestException('Invalid order amount');
-  }
-
-  // 2️⃣ Prevent double payment
-  const alreadyPaid = await this.paymentModel.findOne({
-    where: {
+    // Create transaction
+    const transactionId: string = 'TXN_' + uuid();
+    await this.paymentModel.create({
       orderId,
-      status: PaymentStatus.SUCCESS,
-    },
-  });
-
-  if (alreadyPaid) {
-    throw new BadRequestException('Order already paid');
-  }
-
-  // 3️⃣ Create transaction
-  const transactionId = 'TXN_' + uuid();
-
-  await this.paymentModel.create({
-    orderId,
-    transactionId,
-    method: 'SSLCommerz',
-    status: PaymentStatus.INITIATED,
-    amount,
-    currency: 'BDT',
-  });
-
-  // 4️⃣ SSLCommerz payload (recommended fields)
-  const payload = {
-    store_id: process.env.SSL_STORE_ID,
-    store_passwd: process.env.SSL_STORE_PASS,
-    total_amount: amount,
-    currency: 'BDT',
-    tran_id: transactionId,
-
-    success_url: `${process.env.BASE_URL}/payments/success`,
-    fail_url: `${process.env.BASE_URL}/payments/fail`,
-    cancel_url: `${process.env.BASE_URL}/payments/cancel`,
-
-    cus_name: 'Customer',
-    cus_email: 'customer@example.com',
-    cus_phone: '01700000000',
-
-    product_name: 'Ecommerce Order',
-    product_category: 'General',
-    shipping_method: 'NO',
-  };
-
-  try {
-    const response = await axios.post(
-      'https://sandbox.sslcommerz.com/gwprocess/v3/api.php',
-      payload,
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-    );
-
-    if (!response.data?.GatewayPageURL) {
-      throw new BadRequestException('Invalid payment gateway response');
-    }
-
-    return {
-      paymentUrl: response.data.GatewayPageURL,
       transactionId,
-    };
-  } catch (error: any) {
-    console.error('SSLCommerz API Error:', error.response?.data || error.message);
-    throw new BadRequestException('Payment initialization failed');
+      method: 'SSLCommerz',
+      status: PaymentStatus.INITIATED,
+      amount,
+      currency: 'BDT',
+    });
+
+    // SSLCommerz payload
+    const payload = {
+  store_id: process.env.SSL_STORE_ID,
+  store_passwd: process.env.SSL_STORE_PASS,
+  total_amount: amount,
+  currency: 'BDT',
+  tran_id: transactionId,
+
+  // URLs
+  success_url: `${process.env.FRONTEND_URL}/success`,
+  fail_url: `${process.env.FRONTEND_URL}/payments/fail`,
+  cancel_url: `${process.env.FRONTEND_URL}/payments/cancel`,
+
+  // Customer Info (required)
+  cus_name: 'Customer',
+  cus_email: 'customer@example.com',
+  cus_phone: '01700000000',
+  cus_add1: 'House 123, Road 4',
+  cus_add2: 'Banani',
+  cus_city: 'Dhaka',
+  cus_state: 'Dhaka',
+  cus_postcode: '1213',
+  cus_country: 'Bangladesh',
+
+  // Product Info
+  product_name: 'Ecommerce Order',
+  product_category: 'General',
+  product_profile: 'general',   //  Required
+  shipping_method: 'NO',
+};
+
+    // Make axios POST call (form-urlencoded)
+    try {
+      const response = await axios.post(
+        'https://sandbox.sslcommerz.com/gwprocess/v4/api.php',
+        qs.stringify(payload),
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+      );
+
+      if (!response.data?.GatewayPageURL) {
+        console.error('SSLCommerz Response:', response.data);
+        throw new BadRequestException('Invalid payment gateway response');
+      }
+
+      return {
+        paymentUrl: response.data.GatewayPageURL,
+        transactionId,
+      };
+    } catch (error: any) {
+      console.error('SSLCommerz API Error:', error.response?.data || error.message);
+      throw new BadRequestException('Payment initialization failed');
+    }
   }
-}
-
-
-
-
-
 
   //  Handle Success → update payment + order + clear cart
-  async handleSuccess(tran_id: string, ) {
+  async handleSuccess(tran_id: string): Promise<{ message: string }> {
     const payment = await this.paymentModel.findOne({
-        
-        where: { transactionId: tran_id },
-
-        include: [Order], // Payment → Order relation load
-    
-    
+      where: { transactionId: tran_id },
+      include: [Order],
     });
     if (!payment) throw new BadRequestException('Payment not found');
 
@@ -139,7 +124,7 @@ async initiatePayment(orderId: number) {
   }
 
   //  Handle Fail → update payment + cancel order
-  async handleFail(tran_id: string) {
+  async handleFail(tran_id: string): Promise<{ message: string }> {
     const payment = await this.paymentModel.findOne({ where: { transactionId: tran_id } });
     if (!payment) throw new BadRequestException('Payment not found');
 
@@ -152,13 +137,11 @@ async initiatePayment(orderId: number) {
   }
 
   //  Handle Cancel → update payment + cancel order
-  async handleCancel(tran_id: string) {
+  async handleCancel(tran_id: string): Promise<{ message: string }> {
     const payment = await this.paymentModel.findOne({ where: { transactionId: tran_id } });
     if (!payment) throw new BadRequestException('Payment not found');
 
-   payment.status = PaymentStatus.CANCELLED;
-await payment.save();
-
+    payment.status = PaymentStatus.CANCELLED;
     await payment.save();
 
     await this.ordersService.cancelOrder(payment.orderId);

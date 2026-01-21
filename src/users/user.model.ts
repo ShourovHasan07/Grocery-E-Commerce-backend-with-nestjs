@@ -1,16 +1,16 @@
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 import { Optional } from 'sequelize';
 
-
 // 🔹 Plain attributes (DB fields only)
 export interface UserAttributes {
   id: number;
-  clerkId?: string;
-  name?: string;
-  email: string;
-  password?: string;
+  clerkId?: string | null;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  password?: string | null;
   status?: boolean;
-  deletedAt?: Date;
+  deletedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -18,12 +18,8 @@ export interface UserAttributes {
 // 🔹 Attributes needed when creating a user
 export type UserCreationAttributes = Optional<
   UserAttributes,
-  'id' | 'clerkId' | 'name' | 'password' | 'status' | 'deletedAt' | 'createdAt' | 'updatedAt'
+  'id' | 'clerkId' | 'name' | 'password' | 'phone' | 'status' | 'deletedAt' | 'createdAt' | 'updatedAt'
 >;
-
-
-
-
 
 @Table({
   tableName: 'users',
@@ -41,31 +37,40 @@ export class User extends Model<UserAttributes, UserCreationAttributes> {
   @Column({
     type: DataType.STRING(100),
     allowNull: true,
-    defaultValue: '',
+    defaultValue: null, // empty string নয়, null
   })
-  declare clerkId: string;
+  declare clerkId: string | null;
 
   @Column({
     type: DataType.STRING(100),
     allowNull: true,
-    defaultValue: '',
+    defaultValue: null,
   })
-  declare name: string;
+  declare name: string | null;
 
   @Column({
     type: DataType.STRING(100),
-    allowNull: false,
+    allowNull: true, // nullable
     unique: true,
     validate: { isEmail: true },
+    defaultValue: null,
   })
-  declare email: string;
+  declare email: string | null;
+
+  @Column({
+    type: DataType.STRING(20),
+    allowNull: true, // nullable
+    unique: true,
+    defaultValue: null,
+  })
+  declare phone: string | null;
 
   @Column({
     type: DataType.STRING(255),
     allowNull: true,
-    defaultValue: '',
+    defaultValue: null,
   })
-  declare password: string;
+  declare password: string | null;
 
   @Column({
     type: DataType.BOOLEAN,
@@ -77,5 +82,5 @@ export class User extends Model<UserAttributes, UserCreationAttributes> {
     type: DataType.DATE,
     allowNull: true,
   })
-  declare deletedAt: Date;
+  declare deletedAt: Date | null;
 }

@@ -9,6 +9,9 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
+
+
+  //
   @UseGuards(AuthGuard)
   @Post('checkout')
   checkout(@Req() req) {

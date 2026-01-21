@@ -4,7 +4,7 @@ import { Payment } from './payments.model';
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
 import { OrdersModule } from '../Orders/orders.module';
-import { CartModule } from 'src/Cart Module/cart.module';
+import { CartModule } from 'src/cart-module/cart.module';
 
 @Module({
   imports: [

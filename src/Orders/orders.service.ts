@@ -2,8 +2,8 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/sequelize';
 import { Order } from './order.model';
 import { OrderItem } from './order-item.model';
-import { Cart } from '../Cart Module/cart.model';
-import { CartItem } from '../Cart Module/cart.model';
+import { Cart } from '../cart-module/cart.model';
+import { CartItem } from '../cart-module/cart.model';
 import { OrderStatus } from './order-status.enum';
 
 @Injectable()
@@ -26,40 +26,59 @@ async findById(orderId: number) {
 
 
   //  STEP 1: Checkout → Create Order (PENDING)
-  async checkout(userId: number) {
-    const cart = await this.cartModel.findOne({
-      where: { userId },
-      include: [CartItem],
-    });
-
-    if (!cart || !cart.items || cart.items.length === 0) {
-      throw new BadRequestException('Cart is empty');
-    }
-
-    const order = await this.orderModel.create({
+async checkout(userId: number) {
+  // check if user has pending order
+  const existingOrder = await this.orderModel.findOne({
+    where: {
       userId,
-      totalPrice: cart.totalPrice,
       status: OrderStatus.PENDING,
-    });
+    },
+  });
 
-    for (const item of cart.items) {
-      await this.orderItemModel.create({
-        orderId: order.id,
-        productId: item.productId,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        subtotal: item.subtotal,
-      });
-    }
-
+  if (existingOrder) {
     return {
-      message: 'Order created. Proceed to payment.',
-      orderId: order.id,
-      amount: cart.totalPrice,
-      status: order.status,
+      message: 'You already have a pending order. Proceed to payment.',
+      orderId: existingOrder.id,
+      amount: existingOrder.totalPrice,
+      status: existingOrder.status,
     };
   }
+
+  // fetch cart
+  const cart = await this.cartModel.findOne({
+    where: { userId },
+    include: [CartItem],
+  });
+
+  if (!cart || !cart.items || cart.items.length === 0) {
+    throw new BadRequestException('Cart is empty');
+  }
+
+  // create new order
+  const order = await this.orderModel.create({
+    userId,
+    totalPrice: cart.totalPrice,
+    status: OrderStatus.PENDING,
+  });
+
+  for (const item of cart.items) {
+    await this.orderItemModel.create({
+      orderId: order.id,
+      productId: item.productId,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      subtotal: item.subtotal,
+    });
+  }
+
+  return {
+    message: 'Order created. Proceed to payment.',
+    orderId: order.id,
+    amount: cart.totalPrice,
+    status: order.status,
+  };
+}
 
   //  STEP 2: Payment Success → Confirm Order
   async confirmPaymentSuccess(orderId: number, userId: number) {

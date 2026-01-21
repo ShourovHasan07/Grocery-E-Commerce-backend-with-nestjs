@@ -1,6 +1,6 @@
 import { SequelizeModuleOptions } from '@nestjs/sequelize';
 import { User } from '../users/user.model';
-import { Cart, CartItem } from 'src/Cart Module/cart.model';
+import { Cart, CartItem } from 'src/cart-module/cart.model';
 
 
 export const databaseConfig: SequelizeModuleOptions = {

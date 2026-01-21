@@ -1,9 +1,38 @@
-// src/cart/cart.model.ts
-import { Table, Column, Model, DataType, ForeignKey, HasMany, BelongsTo } from 'sequelize-typescript';
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  ForeignKey,
+  HasMany,
+  BelongsTo,
+} from 'sequelize-typescript';
 import { User } from '../users/user.model';
 
+/* ================================
+   Creation Attributes Interfaces
+================================ */
+export interface CartCreationAttributes {
+  userId?: number;
+  guestId?: string;
+  totalPrice?: number;
+}
+
+export interface CartItemCreationAttributes {
+  cartId: number;
+  productId: number;
+  name: string;
+  price: number;
+  quantity: number;
+  subtotal: number;
+  image?: string;
+}
+
+/* ================================
+   Cart Model
+================================ */
 @Table({ tableName: 'carts' })
-export class Cart extends Model<Cart> {
+export class Cart extends Model<Cart, CartCreationAttributes> {
   @Column({ type: DataType.INTEGER, primaryKey: true, autoIncrement: true })
   declare id: number;
 
@@ -11,8 +40,8 @@ export class Cart extends Model<Cart> {
   @Column({ type: DataType.INTEGER, allowNull: true })
   declare userId: number | null;
 
- @Column({ type: DataType.STRING, allowNull: true })
-declare guestId: string | null;
+  @Column({ type: DataType.STRING, allowNull: true })
+  declare guestId: string | null;
 
   @Column({ type: DataType.FLOAT, defaultValue: 0 })
   declare totalPrice: number;
@@ -21,11 +50,11 @@ declare guestId: string | null;
   declare items?: CartItem[];
 }
 
-
-
-
+/* ================================
+   CartItem Model
+================================ */
 @Table({ tableName: 'cart_items' })
-export class CartItem extends Model<CartItem> {
+export class CartItem extends Model<CartItem, CartItemCreationAttributes> {
   @Column({ type: DataType.INTEGER, primaryKey: true, autoIncrement: true })
   declare id: number;
 
@@ -49,7 +78,7 @@ export class CartItem extends Model<CartItem> {
   declare subtotal: number;
 
   @Column({ type: DataType.STRING })
-  declare image: string;
+  declare image?: string;
 
   @BelongsTo(() => Cart)
   declare cart?: Cart;
