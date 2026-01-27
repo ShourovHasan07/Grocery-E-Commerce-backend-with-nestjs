@@ -1,3 +1,4 @@
+// admin.guard.ts
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
 
 @Injectable()
@@ -5,12 +6,9 @@ export class AdminGuard implements CanActivate {
   canActivate(ctx: ExecutionContext): boolean {
     const req = ctx.switchToHttp().getRequest();
 
+    // JWT Strategy থেকে req.user আসবে
     if (!req.user) {
       throw new UnauthorizedException('User not logged in');
-    }
-
-    if (!req.user.role) {
-      throw new UnauthorizedException('Role missing');
     }
 
     const allowedRoles = ['ADMIN', 'SUPER_ADMIN'];
@@ -22,4 +20,3 @@ export class AdminGuard implements CanActivate {
     return true;
   }
 }
-

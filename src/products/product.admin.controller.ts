@@ -14,6 +14,7 @@ import { ProductsService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { AdminGuard } from 'src/admin/admin.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminJwtAuthGuard } from 'src/auth/admin-jwt.guard';
 
 
 @Controller('admin/products')
@@ -24,7 +25,7 @@ export class ProductAdminController {
      constructor(private readonly productsService: ProductsService) {}
 
       @Post('create')
-       @UseGuards(AuthGuard('jwt'), AdminGuard) // JWT + Admin guard
+       @UseGuards(AdminJwtAuthGuard) // JWT + Admin guard
         @UseInterceptors(FileInterceptor('image'))
   async create(
     @Body() body: CreateProductDto,

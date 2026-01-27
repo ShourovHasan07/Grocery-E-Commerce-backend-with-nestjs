@@ -32,6 +32,8 @@ export class AuthService {
     role: admin.role,
   });
 
+  //console.log('Generated Admin JWT Token:', token)
+
   //  remove password
   const { password: _, ...safeAdmin } = admin.toJSON();
 

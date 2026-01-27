@@ -35,7 +35,8 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000', // frontend
-      'http://localhost:3001', // admin panel
+      'http://localhost:3001', // custom any frontend or admin pannell 
+      'http://localhost:3002', // admin panel
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

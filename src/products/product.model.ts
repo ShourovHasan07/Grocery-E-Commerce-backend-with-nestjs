@@ -35,6 +35,12 @@ export class Product extends Model<Product> {
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
   declare reviewCount: number;
 
+  @Column({ type: DataType.INTEGER, defaultValue: 0 })
+  declare soldCount: number; // Top selling
+
+  @Column({ type: DataType.INTEGER, defaultValue: 0 })
+  declare views: number; // Popular products
+
   @Column({ type: DataType.STRING, allowNull: false })
   declare image: string;
 
@@ -58,34 +64,4 @@ export class Product extends Model<Product> {
 
   @Column({ type: DataType.INTEGER, allowNull: false })
   declare stock: number;
-
-  @Column({ type: DataType.STRING, allowNull: true })
-  declare type?: string;
-
-  @Column({ type: DataType.DATE, allowNull: true })
-  declare manufactureDate?: Date;
-
-  @Column({ type: DataType.INTEGER, allowNull: true })
-  declare lifeTimeDays?: number;
-
-  @Column({ type: DataType.STRING, allowNull: true })
-  declare sku?: string;
-
-  @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: true })
-  declare tags?: string;
-
-  @Column({ type: DataType.TEXT, allowNull: true })
-  declare ingredients?: string;
-
-  @Column({ type: DataType.TEXT, allowNull: true })
-  declare warnings?: string;
-
-  @Column({ type: DataType.TEXT, allowNull: true })
-  declare suggestedUse?: string;
-
-  @Column({ type: DataType.TEXT, allowNull: true })
-  declare packagingInfo?: string;
-
-  @Column({ type: DataType.TEXT, allowNull: true })
-  declare deliveryInfo?: string;
 }
